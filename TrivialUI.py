@@ -21,7 +21,11 @@ class DictProxy(object):
             return self.child_cache[row]
         else:
             items = list(self.data.items())
-            child = LeafProxy(items[row][1], self)
+            key, childItem = items[row]
+            if isinstance(childItem, dict):
+                child = DictProxy(childItem, self, row)
+            else:
+                child = LeafProxy(childItem, self)
             self.child_cache[row] = child
             return child
     
@@ -101,7 +105,12 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
 
-        self.model = DictModel({'a': 1, 'b': 2, 'c': 3})
+        self.model = DictModel({'a': 1,
+                                'b': 2,
+                                'c': {'apple': 'red',
+                                      'banana': 'yellow'},
+                                'd': {'x': 4,
+                                      'y': 5}})
         
         self.view = QTreeView(self)
         self.view.setModel(self.model)
