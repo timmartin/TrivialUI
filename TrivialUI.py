@@ -1,9 +1,11 @@
 from PyQt5.QtCore import QAbstractItemModel, QModelIndex, Qt
 from PyQt5.QtWidgets import QMainWindow, QTreeView
+import collections
 
 class DictProxy(object):
-    def __init__(self, data, parent=None, row=0):
+    def __init__(self, key, data, parent=None, row=0):
         self.data = data
+        self.key = key
         self.parent = parent
         self.row = row
         self.child_cache = {}
@@ -23,9 +25,9 @@ class DictProxy(object):
             items = list(self.data.items())
             key, childItem = items[row]
             if isinstance(childItem, dict):
-                child = DictProxy(childItem, self, row)
+                child = DictProxy(key, childItem, self, row)
             else:
-                child = LeafProxy(childItem, self)
+                child = LeafProxy(key, childItem, self)
             self.child_cache[row] = child
             return child
     
@@ -34,9 +36,10 @@ class DictProxy(object):
         
 
 class LeafProxy(object):
-    def __init__(self, data, parent=None):
+    def __init__(self, key, data, parent=None):
         self.data = data
         self.parent = parent
+        self.key = key
 
     def hasChild(self, row):
         return False
@@ -52,7 +55,7 @@ class DictModel(QAbstractItemModel):
         super(DictModel, self).__init__(parent)
         
         self.data = data
-        self.rootItem = DictProxy(data)
+        self.rootItem = DictProxy('', data)
 
     def index(self, row, column, parentIndex):
         if not self.hasIndex(row, column, parentIndex):
@@ -99,18 +102,23 @@ class DictModel(QAbstractItemModel):
             return None
 
         item = index.internalPointer()
-        return item.data
+        if index.column() == 0:
+            return item.key
+        else:
+            return item.data
     
 class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
 
-        self.model = DictModel({'a': 1,
-                                'b': 2,
-                                'c': {'apple': 'red',
-                                      'banana': 'yellow'},
-                                'd': {'x': 4,
-                                      'y': 5}})
+        model_data = collections.OrderedDict([('a', 1),
+                                              ('b', 2),
+                                              ('c', collections.OrderedDict([('apple', 'red'),
+                                                                             ('banana', 'yellow')])),
+                                              ('d', collections.OrderedDict([('x', 4),
+                                                                             ('y', 5)]))])
+        
+        self.model = DictModel(model_data)
         
         self.view = QTreeView(self)
         self.view.setModel(self.model)
