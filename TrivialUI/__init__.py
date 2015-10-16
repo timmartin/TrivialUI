@@ -106,7 +106,20 @@ class DictModel(QAbstractItemModel):
             return item.key
         else:
             return item.data
-    
+
+class DictTreeView(object):
+    def __init__(self, data):
+        self.data = data
+        self.treeView = QTreeView()
+        self.treeView.setModel(DictModel(self.data))
+
+    def set_on_clicked(self, callback):
+        def execute(index):
+            callback(index.internalPointer().data)
+
+        self.treeView.clicked.connect(execute)
+
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
