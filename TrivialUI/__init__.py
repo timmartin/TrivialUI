@@ -36,12 +36,15 @@ class DictProxy(object):
 
 
 class ListProxy(object):
-    def __init__(self, key, data, parent=None, row=0):
+    def __init__(self, key, click_target, data, parent=None, row=0):
         """
+        :param click_target:  The object that, if this row of the view
+          is clicked on, will be passed to the click handler.
         :param row:  The row of this list in its parent.
         """
         self.data = data
         self.key = key
+        self.click_target = click_target
         self.parent = parent
         self.row = row
 
@@ -55,10 +58,10 @@ class ListProxy(object):
             return self.child_cache[row]
         else:
             if isinstance(self.data[row], tuple):
-                key, child_item = self.data[row]
-                child = ListProxy(key, child_item, self)
+                key, click_target, children = self.data[row]
+                child = ListProxy(key, click_target, children, self)
             else:
-                child = LeafProxy(None, child_item, self)
+                child = LeafProxy(None, self.data[row], [], self)
             self.child_cache[row] = child
             return child
 
@@ -144,7 +147,7 @@ class ListModel(QAbstractItemModel):
         super(ListModel, self).__init__(parent)
 
         self.data = data
-        self.root_item = ListProxy('', data)
+        self.root_item = ListProxy('', data, data)
 
     def index(self, row, column, parent_index):
         if not self.hasIndex(row, column, parent_index):
@@ -221,7 +224,7 @@ class NestedListTreeView(object):
 
     def set_on_clicked(self, callback):
         def execute(index):
-            callback(index.internalPointer().data)
+            callback(index.internalPointer().click_target)
 
         self.treeView.clicked.connect(execute)
 
