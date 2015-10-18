@@ -61,7 +61,7 @@ class ListProxy(object):
                 key, click_target, children = self.data[row]
                 child = ListProxy(key, click_target, children, self)
             else:
-                child = LeafProxy(None, self.data[row], [], self)
+                child = LeafProxy(self.data[row], self.data[row], [], self)
             self.child_cache[row] = child
             return child
 
@@ -70,10 +70,11 @@ class ListProxy(object):
 
 
 class LeafProxy(object):
-    def __init__(self, key, data, parent=None):
+    def __init__(self, key, click_target, data, parent=None):
         self.data = data
         self.parent = parent
         self.key = key
+        self.click_target = click_target
 
     def hasChild(self, row):
         return False
@@ -81,7 +82,7 @@ class LeafProxy(object):
     def childAt(self, row):
         raise Exception("No child")
 
-    def childCount(self):
+    def child_count(self):
         return 0
 
 class DictModel(QAbstractItemModel):
@@ -218,15 +219,18 @@ class DictTreeView(object):
 
 class NestedListTreeView(object):
     def __init__(self, data):
-        self.data = data
         self.treeView = QTreeView()
-        self.treeView.setModel(ListModel(self.data))
+        self.set_data(data)
 
     def set_on_clicked(self, callback):
         def execute(index):
             callback(index.internalPointer().click_target)
 
         self.treeView.clicked.connect(execute)
+
+    def set_data(self, data):
+        self.data = data
+        self.treeView.setModel(ListModel(self.data))
 
 
 class MainWindow(QMainWindow):
