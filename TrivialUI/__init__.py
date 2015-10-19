@@ -146,11 +146,37 @@ class DictModel(QAbstractItemModel):
 
 
 class ListModel(QAbstractItemModel):
+    """A model object that exposes the model interface that Qt expects,
+    based on a bunch of data provided as (possibly nested) Python list
+    objects.
+
+    The tree structure itself is built up inside of the ListProxy
+    object stored as self.root_item. The tree is constructed on the
+    fly as Qt queries using the index() method.
+
+    """
+
     def __init__(self, data, parent=None):
         super(ListModel, self).__init__(parent)
 
         self.data = data
         self.root_item = ListProxy('', data, data)
+        self.num_columns = self._find_num_columns(self.root_item)
+
+    def _find_num_columns(self, data):
+        """
+        Find the number of columns to use to display this data.
+        """
+        if isinstance(data, LeafProxy):
+            if isinstance(data.data, tuple):
+                return len(data.data)
+            else:
+                return 1
+        elif isinstance(data, ListProxy) and data.child_count():
+            return max(self._find_num_columns(data.child_at(i))
+                       for i in range(data.child_count()))
+        else:
+            return 1
 
     def index(self, row, column, parent_index):
         if not self.hasIndex(row, column, parent_index):
@@ -179,7 +205,7 @@ class ListModel(QAbstractItemModel):
             return QModelIndex()
 
     def columnCount(self, parent):
-        return 2
+        return self.num_columns
 
     def rowCount(self, parent_index):
         if parent_index.column() > 0:
@@ -192,6 +218,9 @@ class ListModel(QAbstractItemModel):
         return parent_item.child_count()
 
     def data(self, index, role):
+        """
+        Implementation of a pure virtual base function from Qt.
+        """
         if not index.isValid():
             return None
 
