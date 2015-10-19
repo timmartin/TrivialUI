@@ -57,11 +57,13 @@ class ListProxy(object):
         if row in self.child_cache:
             return self.child_cache[row]
         else:
-            if isinstance(self.data[row], tuple):
+            if isinstance(self.data[row], tuple) \
+               and len(self.data[row]) == 3 \
+               and isinstance(self.data[row][2], list):
                 key, click_target, children = self.data[row]
                 child = ListProxy(key, click_target, children, self)
             else:
-                child = LeafProxy(self.data[row], self.data[row], [], self)
+                child = LeafProxy(self.data[row], self.data[row], self.data[row], self)
             self.child_cache[row] = child
             return child
 
@@ -197,10 +199,16 @@ class ListModel(QAbstractItemModel):
             return None
 
         item = index.internalPointer()
-        if index.column() == 0:
-            return item.key
+        if isinstance(item, LeafProxy):
+            try:
+                return item.data[index.column()]
+            except IndexError as e:
+                return ""
         else:
-            return item.data
+            if index.column() == 0:
+                return item.key
+            else:
+                return item.data
 
 
 
