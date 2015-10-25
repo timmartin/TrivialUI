@@ -268,23 +268,3 @@ class NestedListTreeView(object):
     def set_data(self, data):
         self.data = data
         self.treeView.setModel(ListModel(self.data))
-
-
-class MainWindow(QMainWindow):
-    def __init__(self):
-        super(MainWindow, self).__init__()
-
-        model_data = collections.OrderedDict([('a', 1),
-                                              ('b', 2),
-                                              ('c', collections.OrderedDict([('apple', 'red'),
-                                                                             ('banana', 'yellow')])),
-                                              ('d', collections.OrderedDict([('x', 4),
-                                                                             ('y', 5)]))])
-
-        self.model = DictModel(model_data)
-
-        self.view = QTreeView(self)
-        self.view.setModel(self.model)
-
-        self.setCentralWidget(self.view)
-        self.setWindowTitle("Main Window")
