@@ -1,5 +1,6 @@
 from PyQt5.QtCore import QAbstractItemModel, QModelIndex, Qt
-from PyQt5.QtWidgets import QMainWindow, QTreeView
+from PyQt5.QtWidgets import (QMainWindow, QTreeView, QWidget, QPushButton,
+                             QFormLayout, QLineEdit, QLabel)
 import collections
 
 class DictProxy(object):
@@ -268,3 +269,32 @@ class NestedListTreeView(object):
     def set_data(self, data):
         self.data = data
         self.treeView.setModel(ListModel(self.data))
+
+class FormWidget(QWidget):
+    def __init__(self, parent=None, submit_callback=None, inputs=None):
+        super(FormWidget, self).__init__(parent)
+
+        if inputs is None:
+            inputs = {}
+
+        self.submit_callback = submit_callback
+
+        self.form = QFormLayout()
+
+        self.inputs = {}
+        for key in inputs:
+            self.inputs[key] = QLineEdit()
+            self.form.addRow(QLabel(key), self.inputs[key])
+
+        self.submitButton = QPushButton("Submit")
+        self.submitButton.clicked.connect(self.button_pushed)
+
+        self.form.addRow(self.submitButton)
+
+        self.setLayout(self.form)
+
+    def button_pushed(self, checked):
+        if self.submit_callback:
+            values = {key: self.inputs[key].text()
+                      for key in self.inputs}
+            self.submit_callback(values)
