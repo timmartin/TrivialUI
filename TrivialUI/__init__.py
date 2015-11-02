@@ -1,6 +1,6 @@
 from PyQt5.QtCore import QAbstractItemModel, QModelIndex, Qt
 from PyQt5.QtWidgets import (QMainWindow, QTreeView, QWidget, QPushButton,
-                             QFormLayout, QLineEdit, QLabel)
+                             QFormLayout, QLineEdit, QLabel, QAction)
 import collections
 
 class DictProxy(object):
@@ -269,6 +269,31 @@ class NestedListTreeView(object):
     def set_data(self, data):
         self.data = data
         self.treeView.setModel(ListModel(self.data))
+
+class MainWindow(QMainWindow):
+    def __init__(self, menus=None):
+        super(MainWindow, self).__init__()
+
+        self.menus = {}
+        self.create_default_actions()
+        self.create_default_menus()
+
+        if menus:
+            for section, menu in menus.items():
+                self.menus[section] = self.menuBar().addMenu(section)
+                for entry, callback in menu.items():
+                    action = QAction(entry, self, triggered=callback)
+                    self.menus[section].addAction(action)
+
+    def create_default_actions(self):
+        self.exit_action = QAction("E&xit", self,
+                                   statusTip="Exit the application",
+                                   triggered=self.close)
+
+    def create_default_menus(self):
+        self.menus['&File'] = self.menuBar().addMenu('&File')
+        self.menus['&File'].addAction(self.exit_action)
+
 
 class FormWidget(QWidget):
     def __init__(self, parent=None, submit_callback=None, inputs=None):
