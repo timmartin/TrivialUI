@@ -4,6 +4,13 @@ from PyQt5.QtWidgets import (QMainWindow, QTreeView, QWidget, QPushButton,
 import collections
 
 class DictProxy(object):
+    """Proxy object for making a dict of dicts navigable in a form
+    usable by PyQt.
+
+    This gives nondeterministic ordering, unless you use an
+    OrderedDict.
+    """
+
     def __init__(self, key, data, parent=None, row=0):
         self.data = data
         self.key = key
@@ -28,7 +35,7 @@ class DictProxy(object):
             if isinstance(childItem, dict):
                 child = DictProxy(key, childItem, self, row)
             else:
-                child = LeafProxy(key, childItem, self)
+                child = LeafProxy(key, None, childItem, self)
             self.child_cache[row] = child
             return child
 
@@ -64,7 +71,10 @@ class ListProxy(object):
                 key, click_target, children = self.data[row]
                 child = ListProxy(key, click_target, children, self)
             else:
-                child = LeafProxy(self.data[row], self.data[row], self.data[row], self)
+                child = LeafProxy(self.data[row],
+                                  self.data[row],
+                                  self.data[row],
+                                  self)
             self.child_cache[row] = child
             return child
 
@@ -74,6 +84,10 @@ class ListProxy(object):
 
 class LeafProxy(object):
     def __init__(self, key, click_target, data, parent=None):
+        """
+        :param key:  The key that identifies this leaf as an
+                     entry in the parent data.
+        """
         self.data = data
         self.parent = parent
         self.key = key
@@ -258,6 +272,7 @@ class DictTreeView(object):
 class NestedListTreeView(object):
     def __init__(self, data):
         self.treeView = QTreeView()
+        self.model = None
         self.set_data(data)
 
     def set_on_clicked(self, callback):
@@ -268,7 +283,9 @@ class NestedListTreeView(object):
 
     def set_data(self, data):
         self.data = data
-        self.treeView.setModel(ListModel(self.data))
+        self.model = ListModel(self.data)
+        self.treeView.setModel(self.model)
+
 
 class MainWindow(QMainWindow):
     def __init__(self, menus=None):

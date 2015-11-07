@@ -1,6 +1,7 @@
 import pytest
+import unittest
 
-from TrivialUI import DictModel, DictProxy
+from TrivialUI import DictModel, DictProxy, LeafProxy
 
 def satisfies_QAbstractItemModel(thing):
     assert hasattr(thing, "index")
@@ -9,16 +10,22 @@ def satisfies_QAbstractItemModel(thing):
     assert hasattr(thing, "columnCount")
     assert hasattr(thing, "data")
 
-class TestDictEntryProxy(object):
+class TestDictEntryProxy(unittest.TestCase):
     def test_dictProxy(self):
-        proxy = DictProxy({'a': 1, 'b': 2})
+        proxy = DictProxy('key', {'a': 1, 'b': 2})
 
         assert proxy.hasChild(0)
         assert proxy.hasChild(1)
         assert not proxy.hasChild(2)
 
-        assert set([1, 2]) == set([proxy.childAt(0).data,
-                                   proxy.childAt(1).data])
+        self.assertIsInstance(proxy.childAt(0), LeafProxy)
+        self.assertEqual(set(['a', 'b']),
+                         set([proxy.childAt(i).key
+                              for i in range(2)]))
+        self.assertEqual(set([1, 2]),
+                         set([proxy.childAt(i).data
+                              for i in range(2)]))
+        self.assertEqual(proxy, proxy.childAt(0).parent)
     
     def test_create(self):
         the_dict = {'first': {'one': 1, 'two': 2, 'three': 3},
