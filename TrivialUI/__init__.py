@@ -93,19 +93,17 @@ class LeafProxy(object):
     def childCount(self):
         return 0
 
-class DictModel(QAbstractItemModel):
-    def __init__(self, data, parent=None):
-        super(DictModel, self).__init__(parent)
 
-        self.data = data
-        self.rootItem = DictProxy('', None, data)
+class GenericModel(QAbstractItemModel):
+    def __init__(self, parent=None):
+        super(GenericModel, self).__init__(parent)
 
     def index(self, row, column, parentIndex):
         if not self.hasIndex(row, column, parentIndex):
             return QModelIndex()
 
         if not parentIndex.isValid():
-            parentItem = self.rootItem
+            parentItem = self.root_item
         else:
             parentItem = parentIndex.internalPointer()
 
@@ -113,6 +111,16 @@ class DictModel(QAbstractItemModel):
             return self.createIndex(row, column, parentItem.childAt(row))
         else:
             return QModelIndex()
+
+    def rowCount(self, parent_index):
+        if parent_index.column() > 0:
+            return 0
+
+        if not parent_index.isValid():
+            parent_item = self.root_item
+        else:
+            parent_item = parent_index.internalPointer()
+        return parent_item.childCount()
 
     def parent(self, childIndex):
         if not childIndex.isValid():
@@ -124,20 +132,10 @@ class DictModel(QAbstractItemModel):
         else:
             return QModelIndex()
 
-    def columnCount(self, parent):
-        return 2
-
-    def rowCount(self, parentIndex):
-        if parentIndex.column() > 0:
-            return 0
-
-        if not parentIndex.isValid():
-            parentItem = self.rootItem
-        else:
-            parentItem = parentIndex.internalPointer()
-        return parentItem.childCount()
-
     def data(self, index, role):
+        """
+        Implementation of a pure virtual base function from Qt.
+        """
         if not index.isValid():
             return None
 
@@ -145,13 +143,30 @@ class DictModel(QAbstractItemModel):
             return None
 
         item = index.internalPointer()
-        if index.column() == 0:
-            return item.key
+        if isinstance(item, LeafProxy):
+            try:
+                return item.data[index.column()]
+            except IndexError as e:
+                return ""
         else:
-            return item.data
+            if index.column() == 0:
+                return item.key
+            else:
+                return item.data
 
 
-class ListModel(QAbstractItemModel):
+class DictModel(GenericModel):
+    def __init__(self, data, parent=None):
+        super(DictModel, self).__init__(parent)
+
+        self.data = data
+        self.root_item = DictProxy('', None, data)
+
+    def columnCount(self, parent):
+        return 2
+
+
+class ListModel(GenericModel):
     """A model object that exposes the model interface that Qt expects,
     based on a bunch of data provided as (possibly nested) Python list
     objects.
@@ -183,66 +198,8 @@ class ListModel(QAbstractItemModel):
         else:
             return 1
 
-    def index(self, row, column, parent_index):
-        if not self.hasIndex(row, column, parent_index):
-            return QModelIndex()
-
-        if not parent_index.isValid():
-            parent_item = self.root_item
-        else:
-            parent_item = parent_index.internalPointer()
-
-        if parent_item.hasChild(row):
-            return self.createIndex(row, column, parent_item.childAt(row))
-        else:
-            return QModelIndex()
-
-    def parent(self, child_index):
-        if not child_index.isValid():
-            return QModelIndex()
-
-        child_item = child_index.internalPointer()
-        if child_item.parent is not None:
-            return self.createIndex(child_item.parent.row,
-                                    0,
-                                    child_item.parent)
-        else:
-            return QModelIndex()
-
     def columnCount(self, parent):
         return self.num_columns
-
-    def rowCount(self, parent_index):
-        if parent_index.column() > 0:
-            return 0
-
-        if not parent_index.isValid():
-            parent_item = self.root_item
-        else:
-            parent_item = parent_index.internalPointer()
-        return parent_item.childCount()
-
-    def data(self, index, role):
-        """
-        Implementation of a pure virtual base function from Qt.
-        """
-        if not index.isValid():
-            return None
-
-        if role != Qt.DisplayRole:
-            return None
-
-        item = index.internalPointer()
-        if isinstance(item, LeafProxy):
-            try:
-                return item.data[index.column()]
-            except IndexError as e:
-                return ""
-        else:
-            if index.column() == 0:
-                return item.key
-            else:
-                return item.data
 
 
 class DictTreeView(object):
