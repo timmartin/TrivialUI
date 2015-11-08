@@ -1,7 +1,8 @@
+from PyQt5 import QtCore
 import pytest
 import unittest
 
-from TrivialUI import DictModel, DictProxy, LeafProxy
+from TrivialUI import DictModel, ListModel, DictProxy, LeafProxy
 
 def satisfies_QAbstractItemModel(thing):
     assert hasattr(thing, "index")
@@ -10,7 +11,7 @@ def satisfies_QAbstractItemModel(thing):
     assert hasattr(thing, "columnCount")
     assert hasattr(thing, "data")
 
-class TestDictEntryProxy(unittest.TestCase):
+class TestDictProxy(unittest.TestCase):
     def test_dictProxy(self):
         proxy = DictProxy('key', {'a': 1, 'b': 2})
 
@@ -26,11 +27,34 @@ class TestDictEntryProxy(unittest.TestCase):
                          set([proxy.childAt(i).data
                               for i in range(2)]))
         self.assertEqual(proxy, proxy.childAt(0).parent)
-    
+
+
+class TestDictModel(unittest.TestCase):
     def test_create(self):
         the_dict = {'first': {'one': 1, 'two': 2, 'three': 3},
                     'second': {'une': 1, 'deux': 2, 'trois': 3}}
 
-        proxy = DictModel(the_dict)
+        model = DictModel(the_dict)
 
-        satisfies_QAbstractItemModel(proxy)
+        satisfies_QAbstractItemModel(model)
+
+        self.assertEquals(2, model.rowCount(QtCore.QModelIndex()))
+
+class TestListModel(unittest.TestCase):
+    def test_create(self):
+        the_list = [('first', None, [('one', 1), ('two', 2)]),
+                    ('second', None, [('une', 1), ('deux', 2)])]
+
+        model = ListModel(the_list)
+
+        satisfies_QAbstractItemModel(model)
+
+        self.assertEquals(2, model.rowCount(QtCore.QModelIndex()))
+
+        root_index = model.index(0, 0, QtCore.QModelIndex())
+        self.assertEquals(2, model.rowCount(root_index))
+        self.assertEquals('first',
+                          model.data(root_index, QtCore.Qt.DisplayRole))
+
+        first_child_index = model.index(0, 0, root_index)
+        self.assertEquals(0, model.rowCount(first_child_index))

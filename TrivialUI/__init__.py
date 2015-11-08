@@ -174,7 +174,6 @@ class ListModel(QAbstractItemModel):
     def __init__(self, data, parent=None):
         super(ListModel, self).__init__(parent)
 
-        self.data = data
         self.root_item = ListProxy('', data, data)
         self.num_columns = self._find_num_columns(self.root_item)
 
