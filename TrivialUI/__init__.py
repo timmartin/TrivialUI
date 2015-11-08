@@ -3,20 +3,24 @@ from PyQt5.QtWidgets import (QMainWindow, QTreeView, QWidget, QPushButton,
                              QFormLayout, QLineEdit, QLabel, QAction)
 import collections
 
-class DictProxy(object):
-    """Proxy object for making a dict of dicts navigable in a form
-    usable by PyQt.
 
-    This gives nondeterministic ordering, unless you use an
-    OrderedDict.
+class GenericProxy(object):
+    """The proxy object makes a single piece of Python data navigable in a
+    tree context. This is the base class that uses Template Method to
+    allow various different sorts of Python data to be navigated in
+    this way.
+
     """
 
-    def __init__(self, key, data, parent=None, row=0):
+    def __init__(self, key, click_target, data, parent=None, row=0):
+        assert data is not None
+
         self.data = data
         self.key = key
         self.parent = parent
         self.row = row
         self.child_cache = {}
+        self.click_target = click_target
 
     def hasChild(self, row):
         """Check whether this dict has an entry for the specified row. In
@@ -25,6 +29,18 @@ class DictProxy(object):
         """
 
         return row < len(self.data)
+
+    def childCount(self):
+        return len(self.data)
+
+
+class DictProxy(GenericProxy):
+    """Proxy object for making a dict of dicts navigable in a form
+    usable by PyQt.
+
+    This gives nondeterministic ordering, unless you use an
+    OrderedDict.
+    """
 
     def childAt(self, row):
         if row in self.child_cache:
@@ -39,28 +55,9 @@ class DictProxy(object):
             self.child_cache[row] = child
             return child
 
-    def childCount(self):
-        return len(self.data)
 
 
-class ListProxy(object):
-    def __init__(self, key, click_target, data, parent=None, row=0):
-        """
-        :param click_target:  The object that, if this row of the view
-          is clicked on, will be passed to the click handler.
-        :param row:  The row of this list in its parent.
-        """
-        self.data = data
-        self.key = key
-        self.click_target = click_target
-        self.parent = parent
-        self.row = row
-
-        self.child_cache = {}
-
-    def has_child(self, row):
-        return row < len(self.data)
-
+class ListProxy(GenericProxy):
     def child_at(self, row):
         if row in self.child_cache:
             return self.child_cache[row]
@@ -77,9 +74,6 @@ class ListProxy(object):
                                   self)
             self.child_cache[row] = child
             return child
-
-    def child_count(self):
-        return len(self.data)
 
 
 class LeafProxy(object):
@@ -99,7 +93,7 @@ class LeafProxy(object):
     def childAt(self, row):
         raise Exception("No child")
 
-    def child_count(self):
+    def childCount(self):
         return 0
 
 class DictModel(QAbstractItemModel):
@@ -107,7 +101,7 @@ class DictModel(QAbstractItemModel):
         super(DictModel, self).__init__(parent)
 
         self.data = data
-        self.rootItem = DictProxy('', data)
+        self.rootItem = DictProxy('', None, data)
 
     def index(self, row, column, parentIndex):
         if not self.hasIndex(row, column, parentIndex):
@@ -186,9 +180,9 @@ class ListModel(QAbstractItemModel):
                 return len(data.data)
             else:
                 return 1
-        elif isinstance(data, ListProxy) and data.child_count():
+        elif isinstance(data, ListProxy) and data.childCount():
             return max(self._find_num_columns(data.child_at(i))
-                       for i in range(data.child_count()))
+                       for i in range(data.childCount()))
         else:
             return 1
 
@@ -201,7 +195,7 @@ class ListModel(QAbstractItemModel):
         else:
             parent_item = parent_index.internalPointer()
 
-        if parent_item.has_child(row):
+        if parent_item.hasChild(row):
             return self.createIndex(row, column, parent_item.child_at(row))
         else:
             return QModelIndex()
@@ -229,7 +223,7 @@ class ListModel(QAbstractItemModel):
             parent_item = self.root_item
         else:
             parent_item = parent_index.internalPointer()
-        return parent_item.child_count()
+        return parent_item.childCount()
 
     def data(self, index, role):
         """
@@ -252,7 +246,6 @@ class ListModel(QAbstractItemModel):
                 return item.key
             else:
                 return item.data
-
 
 
 class DictTreeView(object):

@@ -13,7 +13,7 @@ def satisfies_QAbstractItemModel(thing):
 
 class TestDictProxy(unittest.TestCase):
     def test_dictProxy(self):
-        proxy = DictProxy('key', {'a': 1, 'b': 2})
+        proxy = DictProxy('key', None, {'a': 1, 'b': 2})
 
         assert proxy.hasChild(0)
         assert proxy.hasChild(1)
