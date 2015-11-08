@@ -33,6 +33,14 @@ class GenericProxy(object):
     def childCount(self):
         return len(self.data)
 
+    def childAt(self, row):
+        if row in self.child_cache:
+            return self.child_cache[row]
+        else:
+            child = self.makeChild(row)
+            self.child_cache[row] = child
+            return child
+
 
 class DictProxy(GenericProxy):
     """Proxy object for making a dict of dicts navigable in a form
@@ -42,38 +50,27 @@ class DictProxy(GenericProxy):
     OrderedDict.
     """
 
-    def childAt(self, row):
-        if row in self.child_cache:
-            return self.child_cache[row]
+    def makeChild(self, row):
+        items = list(self.data.items())
+        key, childItem = items[row]
+        if isinstance(childItem, dict):
+            return DictProxy(key, childItem, self, row)
         else:
-            items = list(self.data.items())
-            key, childItem = items[row]
-            if isinstance(childItem, dict):
-                child = DictProxy(key, childItem, self, row)
-            else:
-                child = LeafProxy(key, None, childItem, self)
-            self.child_cache[row] = child
-            return child
-
+            return LeafProxy(key, None, childItem, self)
 
 
 class ListProxy(GenericProxy):
-    def child_at(self, row):
-        if row in self.child_cache:
-            return self.child_cache[row]
+    def makeChild(self, row):
+        if isinstance(self.data[row], tuple) \
+           and len(self.data[row]) == 3 \
+           and isinstance(self.data[row][2], list):
+            key, click_target, children = self.data[row]
+            return ListProxy(key, click_target, children, self)
         else:
-            if isinstance(self.data[row], tuple) \
-               and len(self.data[row]) == 3 \
-               and isinstance(self.data[row][2], list):
-                key, click_target, children = self.data[row]
-                child = ListProxy(key, click_target, children, self)
-            else:
-                child = LeafProxy(self.data[row],
-                                  self.data[row],
-                                  self.data[row],
-                                  self)
-            self.child_cache[row] = child
-            return child
+            return LeafProxy(self.data[row],
+                             self.data[row],
+                             self.data[row],
+                             self)
 
 
 class LeafProxy(object):
@@ -181,7 +178,7 @@ class ListModel(QAbstractItemModel):
             else:
                 return 1
         elif isinstance(data, ListProxy) and data.childCount():
-            return max(self._find_num_columns(data.child_at(i))
+            return max(self._find_num_columns(data.childAt(i))
                        for i in range(data.childCount()))
         else:
             return 1
@@ -196,7 +193,7 @@ class ListModel(QAbstractItemModel):
             parent_item = parent_index.internalPointer()
 
         if parent_item.hasChild(row):
-            return self.createIndex(row, column, parent_item.child_at(row))
+            return self.createIndex(row, column, parent_item.childAt(row))
         else:
             return QModelIndex()
 
