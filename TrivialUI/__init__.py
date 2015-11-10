@@ -61,8 +61,7 @@ class DictProxy(GenericProxy):
 
 class ListProxy(GenericProxy):
     def makeChild(self, row):
-        if isinstance(self.data[row], tuple) \
-           and len(self.data[row]) == 3 \
+        if len(self.data[row]) == 3 \
            and isinstance(self.data[row][2], list):
             key, click_target, children = self.data[row]
             return ListProxy(key, click_target, children, self)
@@ -188,9 +187,9 @@ class ListModel(GenericModel):
         Find the number of columns to use to display this data.
         """
         if isinstance(data, LeafProxy):
-            if isinstance(data.data, tuple):
+            try:
                 return len(data.data)
-            else:
+            except AttributeError:
                 return 1
         elif isinstance(data, ListProxy) and data.childCount():
             return max(self._find_num_columns(data.childAt(i))
