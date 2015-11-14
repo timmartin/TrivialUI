@@ -220,6 +220,13 @@ class NestedListTreeView(object):
         self.model = None
         self.set_data(data)
 
+        # Size all the columns to the size of their current
+        # contents. Note that this ignores contents for values in the
+        # tree that are collapsed by default, so it's of limited
+        # use. However, it's better than the default sizing.
+        for i in range(self.model.columnCount(None)):
+            self.treeView.resizeColumnToContents(i)
+
     def set_on_clicked(self, callback):
         def execute(index):
             callback(index.internalPointer().click_target)
