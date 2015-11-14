@@ -231,6 +231,14 @@ class NestedListTreeView(object):
         self.model = ListModel(self.data)
         self.treeView.setModel(self.model)
 
+    def refresh_data(self):
+        """Refresh the UI's view of all data in the tree view.  This may be
+        inefficient with very large data sets.
+
+        """
+        root_index = self.model.index(0, 0, QModelIndex())
+        self.treeView.dataChanged(root_index, root_index)
+
 
 class MainWindow(QMainWindow):
     def __init__(self, menus=None):
