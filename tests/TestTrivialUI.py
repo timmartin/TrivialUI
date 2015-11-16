@@ -2,7 +2,7 @@ from PyQt5 import QtCore
 import pytest
 import unittest
 
-from TrivialUI import DictModel, ListModel, DictProxy, LeafProxy
+from TrivialUI import DictModel, ListModel, DictProxy, ListProxy, LeafProxy
 
 def satisfies_QAbstractItemModel(thing):
     assert hasattr(thing, "index")
@@ -13,7 +13,7 @@ def satisfies_QAbstractItemModel(thing):
 
 class TestDictProxy(unittest.TestCase):
     def test_dictProxy(self):
-        proxy = DictProxy('key', None, {'a': 1, 'b': 2})
+        proxy = DictProxy('key', {'a': 1, 'b': 2})
 
         assert proxy.hasChild(0)
         assert proxy.hasChild(1)
@@ -40,6 +40,7 @@ class TestDictModel(unittest.TestCase):
 
         self.assertEquals(2, model.rowCount(QtCore.QModelIndex()))
 
+
 class TestListModel(unittest.TestCase):
     def test_create(self):
         the_list = [('first', None, [('one', 1), ('two', 2)]),
@@ -52,6 +53,7 @@ class TestListModel(unittest.TestCase):
         self.assertEquals(2, model.rowCount(QtCore.QModelIndex()))
 
         root_index = model.index(0, 0, QtCore.QModelIndex())
+
         self.assertEquals(2, model.rowCount(root_index))
         self.assertEquals('first',
                           model.data(root_index, QtCore.Qt.DisplayRole))

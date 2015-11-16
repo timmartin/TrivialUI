@@ -2,6 +2,7 @@ from PyQt5.QtCore import QAbstractItemModel, QModelIndex, Qt
 from PyQt5.QtWidgets import (QMainWindow, QTreeView, QWidget, QPushButton,
                              QFormLayout, QLineEdit, QLabel, QAction)
 import collections
+import itertools
 
 
 class GenericProxy(object):
@@ -12,26 +13,25 @@ class GenericProxy(object):
 
     """
 
-    def __init__(self, key, click_target, data, parent=None, row=0):
-        assert data is not None
+    def __init__(self, data, children, parent=None, row=0):
+        assert children is not None
 
         self.data = data
-        self.key = key
+        self.children = children
         self.parent = parent
         self.row = row
         self.child_cache = {}
-        self.click_target = click_target
 
     def hasChild(self, row):
         """Check whether this dict has an entry for the specified row. In
         fact, this just checks whether the number of entries in the
-        dict is sufficient.
+        collection is sufficient.
         """
 
-        return row < len(self.data)
+        return row < len(self.children)
 
     def childCount(self):
-        return len(self.data)
+        return len(self.children)
 
     def childAt(self, row):
         if row in self.child_cache:
@@ -51,7 +51,7 @@ class DictProxy(GenericProxy):
     """
 
     def makeChild(self, row):
-        items = list(self.data.items())
+        items = list(self.children.items())
         key, childItem = items[row]
         if isinstance(childItem, dict):
             return DictProxy(key, childItem, self, row)
@@ -61,14 +61,17 @@ class DictProxy(GenericProxy):
 
 class ListProxy(GenericProxy):
     def makeChild(self, row):
-        if len(self.data[row]) == 3 \
-           and isinstance(self.data[row][2], list):
-            key, click_target, children = self.data[row]
-            return ListProxy(key, click_target, children, self)
+        def is_child_list(x): return isinstance(x, list)
+
+        child_lists = list(filter(is_child_list, self.children[row]))
+        display_items = list(itertools.filterfalse(is_child_list, self.children[row]))
+
+        if child_lists:
+            return ListProxy(display_items, child_lists[0], self)
         else:
-            return LeafProxy(self.data[row],
-                             self.data[row],
-                             self.data[row],
+            return LeafProxy(self.children[row],
+                             self.children[row],
+                             self.children[row],
                              self)
 
 
@@ -94,8 +97,10 @@ class LeafProxy(object):
 
 
 class GenericModel(QAbstractItemModel):
-    def __init__(self, parent=None):
-        super(GenericModel, self).__init__(parent)
+    def __init__(self, header=None):
+        super(GenericModel, self).__init__(None)
+
+        self.header = header
 
     def index(self, row, column, parentIndex):
         if not self.hasIndex(row, column, parentIndex):
@@ -142,24 +147,27 @@ class GenericModel(QAbstractItemModel):
             return None
 
         item = index.internalPointer()
-        if isinstance(item, LeafProxy):
-            try:
-                return item.data[index.column()]
-            except IndexError as e:
-                return ""
+        try:
+            return item.data[index.column()]
+        except IndexError as e:
+            return ""
+
+    def headerData(self, section, orientation, role):
+        if role != Qt.DisplayRole:
+            return None
+
+        if self.header and len(self.header) >= section + 1:
+            return self.header[section]
         else:
-            if index.column() == 0:
-                return item.key
-            else:
-                return item.data
+            return str(section)
 
 
 class DictModel(GenericModel):
-    def __init__(self, data, parent=None):
-        super(DictModel, self).__init__(parent)
+    def __init__(self, data):
+        super(DictModel, self).__init__()
 
         self.data = data
-        self.root_item = DictProxy('', None, data)
+        self.root_item = DictProxy(None, data)
 
     def columnCount(self, parent):
         return 2
@@ -176,10 +184,15 @@ class ListModel(GenericModel):
 
     """
 
-    def __init__(self, data, parent=None):
-        super(ListModel, self).__init__(parent)
+    def __init__(self, data, header=None):
+        """
+        :param header:  A list of items that should be displayed
+                        as the header labels for the columns.
+        """
 
-        self.root_item = ListProxy('', data, data)
+        super(ListModel, self).__init__(header)
+
+        self.root_item = ListProxy([], data)
         self.num_columns = self._find_num_columns(self.root_item)
 
     def _find_num_columns(self, data):
@@ -215,10 +228,17 @@ class DictTreeView(object):
 
 
 class NestedListTreeView(object):
-    def __init__(self, data):
+    def __init__(self, data, header=None):
         self.treeView = QTreeView()
+        self.header = header
         self.model = None
         self.set_data(data)
+
+        # Expand the root item. I'm not sure if this is a good idea in
+        # general, but it works well on some examples. Maybe a
+        # heuristic is needed.
+        root_index = self.model.index(0, 0, QModelIndex())
+        self.treeView.setExpanded(root_index, True)
 
         # Size all the columns to the size of their current
         # contents. Note that this ignores contents for values in the
@@ -229,13 +249,13 @@ class NestedListTreeView(object):
 
     def set_on_clicked(self, callback):
         def execute(index):
-            callback(index.internalPointer().click_target)
+            callback(index.internalPointer().data)
 
         self.treeView.clicked.connect(execute)
 
     def set_data(self, data):
         self.data = data
-        self.model = ListModel(self.data)
+        self.model = ListModel(self.data, header=self.header)
         self.treeView.setModel(self.model)
 
     def refresh_data(self):
