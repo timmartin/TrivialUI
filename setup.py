@@ -15,7 +15,7 @@ INSTALL_REQUIRES = []
 
 if __name__ == '__main__':
     setup(name=NAME,
-          version="0.0.1",
+          version="0.0.2",
           classifiers=CLASSIFIERS,
           install_requires=INSTALL_REQUIRES,
           packages=PACKAGES)
