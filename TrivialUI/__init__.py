@@ -148,7 +148,10 @@ class GenericModel(QAbstractItemModel):
 
         item = index.internalPointer()
         try:
-            return item.data[index.column()]
+            if item.data[index.column()] is None:
+                return ""
+            else:
+                return str(item.data[index.column()])
         except IndexError as e:
             return ""
 
