@@ -1,6 +1,6 @@
-from PyQt5.QtCore import QAbstractItemModel, QModelIndex, Qt
-from PyQt5.QtWidgets import (QMainWindow, QTreeView, QWidget, QPushButton,
-                             QFormLayout, QLineEdit, QLabel, QAction)
+from PySide.QtCore import QAbstractItemModel, QModelIndex, Qt
+from PySide.QtGui import (QMainWindow, QTreeView, QWidget, QPushButton,
+                          QFormLayout, QLineEdit, QLabel, QAction)
 import collections
 import itertools
 

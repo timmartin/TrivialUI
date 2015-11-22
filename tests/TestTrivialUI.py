@@ -1,4 +1,4 @@
-from PyQt5 import QtCore
+from PySide import QtCore
 import pytest
 import unittest
 
