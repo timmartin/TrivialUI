@@ -2,7 +2,6 @@ from PySide.QtCore import QAbstractItemModel, QModelIndex, Qt
 from PySide.QtGui import (QMainWindow, QTreeView, QWidget, QPushButton,
                           QFormLayout, QLineEdit, QLabel, QAction)
 import collections
-import itertools
 
 
 class GenericProxy(object):
@@ -63,8 +62,12 @@ class ListProxy(GenericProxy):
     def makeChild(self, row):
         def is_child_list(x): return isinstance(x, list)
 
-        child_lists = list(filter(is_child_list, self.children[row]))
-        display_items = list(itertools.filterfalse(is_child_list, self.children[row]))
+        child_lists = [x
+                       for x in self.children[row]
+                       if is_child_list(x)]
+        display_items = [x
+                         for x in self.children[row]
+                         if not is_child_list(x)]
 
         if child_lists:
             return ListProxy(display_items, child_lists[0], self)
