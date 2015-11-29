@@ -7,7 +7,7 @@ addons:
 
 install:
   - pip install -r requirements.txt
-  - pip install PySide --no-index --find-links http://parkin.github.io/python-wheelhouse/PySide-1.2.2-cp27-none-linux_x86_64.whl
+  - pip install PySide --no-index --find-links http://timmartin.github.io/Travis-wheels/PySide-1.2.4-cp27-none-linux_x86_64.whl
   - python ~/virtualenv/python${TRAVIS_PYTHON_VERSION}/bin/pyside_postinstall.py -install
 
 script: nosetests
