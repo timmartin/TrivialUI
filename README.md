@@ -6,4 +6,4 @@ TrivialUI is a GUI library for Python, which aims to provide as simple and Pytho
 
 This is currently highly experimental, and not likely to be usable for anything much.
 
-The UI itself is provided by PyQt5, so this is a dependency.
+The UI itself is provided by PySide.
