@@ -1,7 +1,9 @@
 from PySide.QtCore import QAbstractItemModel, QModelIndex, Qt
-from PySide.QtGui import (QMainWindow, QTreeView, QWidget, QPushButton,
-                          QFormLayout, QLineEdit, QLabel, QAction)
+from PySide.QtGui import (QApplication, QMainWindow, QTreeView, QWidget,
+                          QPushButton, QFormLayout, QLineEdit, QLabel,
+                          QAction)
 import collections
+import contextlib
 
 
 class GenericProxy(object):
@@ -326,3 +328,9 @@ class FormWidget(QWidget):
             values = {key: self.inputs[key].text()
                       for key in self.inputs}
             self.submit_callback(values)
+
+@contextlib.contextmanager
+def Application():
+    app = QApplication([])
+    yield
+    app.exec_()
