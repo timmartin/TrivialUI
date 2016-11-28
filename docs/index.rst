@@ -12,11 +12,14 @@ think you had time to create one, then this might be your thing.
 At least, that's the plan. Currently it's at a very early stage of
 development.
 
+Table of contents
+-----------------
 
 .. toctree::
    :maxdepth: 2
 
    examples
+   reference
 
 
 Indices and tables
