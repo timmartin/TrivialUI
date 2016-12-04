@@ -1,0 +1,4 @@
+-r requirements.txt
+
+mock~=2.0.0
+-e git+https://github.com/timmartin/PySideMocks.git#egg=PySideMocks

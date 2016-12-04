@@ -23,7 +23,7 @@ import shlex
 # where necessary.
 import sys
 from mock import Mock as MagicMock
-import doc_mocks.QtCore
+import PySideMocks.QtCore
 
 class Mock(MagicMock):
     @classmethod
@@ -31,7 +31,7 @@ class Mock(MagicMock):
             return Mock()
 
 MOCK_MODULES = ['PySide.QtGui']
-sys.modules['PySide.QtCore'] = doc_mocks.QtCore
+sys.modules['PySide.QtCore'] = PySideMocks.QtCore
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # If extensions (or modules to document with autodoc) are in another directory,
