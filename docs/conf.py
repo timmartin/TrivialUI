@@ -17,15 +17,21 @@ import sys
 import os
 import shlex
 
+# Workaround for the fact that readthedocs.org can't install Python
+# modules with binary extensions. We replace PySide with a
+# cobbled-together combination of Mock and some hand-crufted mocks
+# where necessary.
 import sys
 from mock import Mock as MagicMock
+import doc_mocks.QtCore
 
 class Mock(MagicMock):
     @classmethod
     def __getattr__(cls, name):
             return Mock()
 
-MOCK_MODULES = ['PySide']
+MOCK_MODULES = ['PySide.QtGui']
+sys.modules['PySide.QtCore'] = doc_mocks.QtCore
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # If extensions (or modules to document with autodoc) are in another directory,
