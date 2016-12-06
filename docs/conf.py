@@ -30,7 +30,7 @@ class Mock(MagicMock):
     def __getattr__(cls, name):
             return Mock()
 
-MOCK_MODULES = ['PySide.QtGui']
+MOCK_MODULES = ['PySide', 'PySide.QtGui']
 sys.modules['PySide.QtCore'] = PySideMocks.QtCore
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
