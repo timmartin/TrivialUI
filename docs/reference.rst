@@ -14,3 +14,6 @@ Reference
 
 .. autoclass:: MainWindow
    :members:
+
+.. autoclass:: TextEdit
+   :members:

@@ -1,7 +1,7 @@
 from PySide.QtCore import QAbstractItemModel, QModelIndex, Qt
 from PySide.QtGui import (QApplication, QMainWindow, QTreeView, QWidget,
                           QPushButton, QFormLayout, QLineEdit, QLabel,
-                          QAction)
+                          QAction, QVBoxLayout)
 import collections
 import contextlib
 
@@ -275,13 +275,38 @@ class NestedListTreeView(object):
         self.treeView.dataChanged(root_index, root_index)
 
 
+class LinearLayoutWidget(QWidget):
+    def __init__(self, widgets, parent=None):
+        super(LinearLayoutWidget, self).__init__(parent)
+
+        self.layout = QVBoxLayout(self)
+        self.setLayout(self.layout)
+
+        for widget in widgets:
+            self.layout.addWidget(widget)
+
+
 class MainWindow(QMainWindow):
-    def __init__(self, menus=None):
+    """A main window for an application. Provides some common things like
+    menus etc.
+
+    """
+
+    def __init__(self, menus=None, title=""):
         super(MainWindow, self).__init__()
+
+        self.setWindowTitle(title)
 
         self.menus = {}
         self.create_default_actions()
         self.create_default_menus()
+
+        if hasattr(self, "widgets") and self.widgets:
+            # We have widgets specified, hook them up in a linear
+            # layout.
+            widget = LinearLayoutWidget(x.create_widget(self)
+                                        for x in self.widgets)
+            self.setCentralWidget(widget)
 
         if menus:
             for section, menu in menus.items():
@@ -328,6 +353,45 @@ class FormWidget(QWidget):
             values = {key: self.inputs[key].text()
                       for key in self.inputs}
             self.submit_callback(values)
+
+
+class Grid(object):
+    def __init__(self, data):
+        self.data = data
+
+    def create_widget(self, parent=None):
+        self.tree_view = QTreeView(parent)
+        self.model = ListModel(self.data)
+        self.tree_view.setModel(self.model)
+        return self.tree_view
+
+class TextEdit(object):
+    """Proxy class for creating a QLineEdit. This has to be a distinct
+    class for two reasons:
+
+    - It's used in static initialisation when creating a MainWindow
+      class, so it ends up being constructed before the Qt application
+      is ready.
+
+    - Similarly, it's used statically where we actually want multiple
+      instances to be created when the MainWindow is created.
+    """
+
+    def __init__(self, name):
+        self.name = name
+
+    def create_widget(self, parent=None):
+        return QLineEdit(parent)
+
+class Button(object):
+    def __init__(self, label, on_click):
+        self.label = label
+        self.on_click = on_click
+
+    def create_widget(self, parent=None):
+        self._button = QPushButton(self.label, parent)
+        self._button.clicked.connect(self.on_click)
+        return self._button
 
 @contextlib.contextmanager
 def Application():
