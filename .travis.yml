@@ -8,11 +8,14 @@ addons:
   apt:
     packages:
       libqt4-dev
+      flake8
 
 install:
   - pip install -r requirements.txt
   - pip install PySide --no-index --find-links http://parkin.github.io/python-wheelhouse/
   - python ~/virtualenv/python${TRAVIS_PYTHON_VERSION}/bin/pyside_postinstall.py -install
 
-script: nosetests
+script:
+  - flake8 TrivialUI
+  - nosetests
 
