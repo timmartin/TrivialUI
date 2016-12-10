@@ -2,7 +2,6 @@ from PySide.QtCore import QAbstractItemModel, QModelIndex, Qt
 from PySide.QtGui import (QApplication, QMainWindow, QTreeView, QWidget,
                           QPushButton, QFormLayout, QLineEdit, QLabel,
                           QAction, QVBoxLayout)
-import collections
 import contextlib
 
 
@@ -157,7 +156,7 @@ class GenericModel(QAbstractItemModel):
                 return ""
             else:
                 return str(item.data[index.column()])
-        except IndexError as e:
+        except IndexError:
             return ""
 
     def headerData(self, section, orientation, role):
@@ -365,6 +364,7 @@ class Grid(object):
         self.tree_view.setModel(self.model)
         return self.tree_view
 
+
 class TextEdit(object):
     """Proxy class for creating a QLineEdit. This has to be a distinct
     class for two reasons:
@@ -383,6 +383,7 @@ class TextEdit(object):
     def create_widget(self, parent=None):
         return QLineEdit(parent)
 
+
 class Button(object):
     def __init__(self, label, on_click):
         self.label = label
@@ -392,6 +393,7 @@ class Button(object):
         self._button = QPushButton(self.label, parent)
         self._button.clicked.connect(self.on_click)
         return self._button
+
 
 @contextlib.contextmanager
 def Application():
